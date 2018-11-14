@@ -12,7 +12,7 @@ const unsigned int GAP_ARG_INDEX = 4;
 typedef struct
 {
     char name[100];
-    char **letters;
+    char *letters[100];
 } Sequence;
 
 int main(int argc, char* argv[])
@@ -29,31 +29,26 @@ int main(int argc, char* argv[])
 
     char line[MAX_CHARS_LINE + 1];
     Sequence sequences[100];
-    Sequence *seq;
 
     int i = -1;
+    int j = 0;
     while(fgets(line, sizeof(line), fp))
     {
-        if (strncmp(&line[0], ">", sizeof(char)) == 0)
+        if (strncmp(line, ">", sizeof(char)) == 0)
         {
+            j = 0;
             i++;
-            seq = (Sequence *)malloc(sizeof(Sequence));
             char *name = strtok(line, "\n");
-            memcpy(seq->name, &name[1], strlen(name));
-            seq->letters = NULL;
-            sequences[i] = *seq;
+            memcpy(sequences[i].name, &name[1], strlen(name));
         }
         else
         {
-            seq->letters = (char **)realloc(seq->letters, strlen(strtok(line, "\n")));
-            *(seq->letters) = strtok(line, "\n");
-            printf("%s\n", *(seq->letters));
+            char *characters = strtok(line, "\n");
+            /* check if malloc succeeded */
+            sequences[i].letters[j] = (char *)malloc(strlen(characters));
+            strcpy(sequences[i].letters[j], characters);
+            printf("%s\n", sequences[i].letters[j]);
+            j++;
         }
-    }
-
-    for (int j=0; j<3; ++j)
-    {
-        char *hi = *(sequences[j].letters);
-        printf("%s\n", *sequences[j].letters);
     }
 }
