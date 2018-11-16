@@ -115,16 +115,16 @@ void populateCell(struct Cell **dynamicTable, const Sequence *sequences, const i
     {
         dynamicTable[row][column].value = gapScore * row;
         dynamicTable[row][column].prevCell = &dynamicTable[row-1][column];
-        dynamicTable[row][column].firstSeqChar = '-';
-        dynamicTable[row][column].secondSeqChar = sequences[secondSeqIndex].letters[column-1];
+        dynamicTable[row][column].firstSeqChar = sequences[firstSeqIndex].letters[row-1];
+        dynamicTable[row][column].secondSeqChar = '-';
         return;
     }
     else if (row == 0)
     {
         dynamicTable[row][column].value = gapScore * column;
         dynamicTable[row][column].prevCell = &dynamicTable[row][column-1];
-        dynamicTable[row][column].firstSeqChar = sequences[firstSeqIndex].letters[row-1];
-        dynamicTable[row][column].secondSeqChar = '-';
+        dynamicTable[row][column].firstSeqChar = '-';
+        dynamicTable[row][column].secondSeqChar = sequences[secondSeqIndex].letters[column-1];
         return;
     }
 
@@ -182,7 +182,7 @@ void calculateAlignment(const Sequence *sequences, const int matchScore,  const 
                        const int gapScore, const int firstSeqIndex, const int secondSeqIndex)
 {
     struct Cell **dynamicTable = (struct Cell **) malloc(
-            (sequences[firstSeqIndex].numCharacters + 1) * sizeof(struct Cell *));
+            (sequences[firstSeqIndex].numCharacters+1) * sizeof(struct Cell *));
     if (dynamicTable == NULL)
     {
         fprintf(stderr, "%s", MEMORY_ALLOCATION_ERR);
@@ -191,7 +191,7 @@ void calculateAlignment(const Sequence *sequences, const int matchScore,  const 
     for (int row = 0; row < sequences[firstSeqIndex].numCharacters + 1; ++row)
     {
         dynamicTable[row] = (struct Cell *) malloc(
-                (sequences[secondSeqIndex].numCharacters + 1) * sizeof(struct Cell));
+                (sequences[secondSeqIndex].numCharacters+1) * sizeof(struct Cell));
         if (dynamicTable[row] == NULL)
         {
             fprintf(stderr, "%s", MEMORY_ALLOCATION_ERR);
@@ -206,6 +206,15 @@ void calculateAlignment(const Sequence *sequences, const int matchScore,  const 
 
     struct Cell *finalCell = &dynamicTable[sequences[firstSeqIndex].numCharacters]
             [sequences[secondSeqIndex].numCharacters];
+//    for (int a=0; a<sequences[firstSeqIndex].numCharacters+1; ++a)
+//    {
+//        for (int b=0; b<sequences[secondSeqIndex].numCharacters+1; ++b)
+//        {
+//            printf("%d ", dynamicTable[a][b].value);
+//        }
+//        printf("\n");
+//    }
+
     printSolution(sequences, firstSeqIndex, secondSeqIndex, finalCell);
 
     int rowInd = 0;
