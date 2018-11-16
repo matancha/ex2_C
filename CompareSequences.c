@@ -18,7 +18,18 @@ const char *FILE_IO_ERR = "File can't be opened!";
 const char *ILLEGAL_STR_ERR = "Illegal parameter supplied";
 
 /**
- * Struct represnting a sequence
+ * Struct representing a cell
+ */
+typedef struct
+{
+    int value;
+    char firstSeqChar;
+    char secondSeqChar;
+    struct Cell *prevCell;
+} Cell;
+
+/**
+ * Struct representing a sequence
  */
 typedef struct
 {
@@ -26,6 +37,55 @@ typedef struct
     char *letters;
     int numCharacters;
 } Sequence;
+
+/**
+ * Prints first sequence
+ * @param temp node to read
+ */
+void printFirstSeq(const Cell *temp)
+{
+    if (temp->prevCell == NULL)
+    {
+        return;
+    }
+
+    printFirstSeq(temp->prevCell);
+    printf("%c", temp->firstSeqChar);
+}
+
+/**
+ * Prints second sequence
+ * @param temp node to read
+ */
+void printSecondSeq(const Cell *temp)
+{
+    if (temp->prevCell == NULL)
+    {
+        return;
+    }
+
+    printSecondSeq(temp->prevCell);
+    printf("%c", temp->secondSeqChar);
+}
+
+/**
+ * Prints solution
+ * @param sequences array
+ * @param firstSeqIndex first seq index
+ * @param secondSeqIndex second seq index
+ * @param finalCell final cell in dynamic table
+ */
+void printSolution(const Sequence *sequences, const int firstSeqIndex, const int secondSeqIndex,
+        const Cell *finalCell)
+{
+    printf("Score for alignment of %s to %s is %d\n", sequences[firstSeqIndex].name,
+           sequences[secondSeqIndex].name, finalCell->value);
+    printf("Solution:\n");
+    printFirstSeq(finalCell);
+    printf("\n");
+    printSecondSeq(finalCell);
+    printf("\n");
+}
 
 /**
  * Populates dynamic table cell with integer
@@ -39,18 +99,32 @@ typedef struct
  * @param firstSeqIndex score for first index
  * @param secondSeqIndex score for second index
  */
-void populateCell(int **dynamicTable, const Sequence *sequences, const int row, const int column,
+void populateCell(Cell **dynamicTable, const Sequence *sequences, const int row, const int column,
                   const int matchScore, const int mismatchScore, const int gapScore,
                   const int firstSeqIndex, const int secondSeqIndex)
 {
-    if (column == 0)
+    if (column == 0 && row == 0)
     {
-        dynamicTable[row][column] = gapScore * row;
+        dynamicTable[row][column].value = 0;
+        dynamicTable[row][column].prevCell = NULL;
+        dynamicTable[row][column].firstSeqChar = NULL;
+        dynamicTable[row][column].secondSeqChar = NULL;
+        return;
+    }
+    else if (column == 0)
+    {
+        dynamicTable[row][column].value = gapScore * row;
+        dynamicTable[row][column].prevCell = &dynamicTable[row-1][column];
+        dynamicTable[row][column].firstSeqChar = '-';
+        dynamicTable[row][column].secondSeqChar = sequences[secondSeqIndex].letters[column-1];
         return;
     }
     else if (row == 0)
     {
-        dynamicTable[row][column] = gapScore * column;
+        dynamicTable[row][column].value = gapScore * column;
+        dynamicTable[row][column].prevCell = &dynamicTable[row][column-1];
+        dynamicTable[row][column].firstSeqChar = sequences[firstSeqIndex].letters[row-1];
+        dynamicTable[row][column].secondSeqChar = '-';
         return;
     }
 
@@ -59,30 +133,39 @@ void populateCell(int **dynamicTable, const Sequence *sequences, const int row, 
     if (sequences[firstSeqIndex].letters[row-1] ==
         sequences[secondSeqIndex].letters[column-1])
     {
-        int matchFinal = dynamicTable[row-1][column-1] + matchScore;
+        int matchFinal = dynamicTable[row-1][column-1].value + matchScore;
         biggestResult = matchFinal;
     }
     else
     {
-        int mismatchFinal = dynamicTable[row-1][column-1] + mismatchScore;
+        int mismatchFinal = dynamicTable[row-1][column-1].value + mismatchScore;
         biggestResult = mismatchFinal;
     }
+    dynamicTable[row][column].prevCell = &dynamicTable[row-1][column-1];
+    dynamicTable[row][column].firstSeqChar = sequences[firstSeqIndex].letters[row-1];
+    dynamicTable[row][column].secondSeqChar = sequences[secondSeqIndex].letters[column-1];
 
     /* Case 2 - x1x2...x_i and y1y2...y_j-1 */
-    int gapFinalY = dynamicTable[row][column-1] + gapScore;
+    int gapFinalY = dynamicTable[row][column-1].value + gapScore;
     if (gapFinalY > biggestResult)
     {
         biggestResult = gapFinalY;
+        dynamicTable[row][column].prevCell = &dynamicTable[row][column-1];
+        dynamicTable[row][column].firstSeqChar = '-';
+        dynamicTable[row][column].secondSeqChar = sequences[secondSeqIndex].letters[column-1];
     }
 
     /* Case 3 - x1x2...x_i-1 and y1y2...y_j */
-    int gapFinalX = dynamicTable[row-1][column] + gapScore;
+    int gapFinalX = dynamicTable[row-1][column].value + gapScore;
     if (gapFinalX > biggestResult)
     {
         biggestResult = gapFinalX;
+        dynamicTable[row][column].prevCell = &dynamicTable[row-1][column];
+        dynamicTable[row][column].firstSeqChar = sequences[firstSeqIndex].letters[row-1];
+        dynamicTable[row][column].secondSeqChar = '-';
     }
 
-    dynamicTable[row][column] = biggestResult;
+    dynamicTable[row][column].value = biggestResult;
 }
 
 /**
@@ -95,12 +178,11 @@ void populateCell(int **dynamicTable, const Sequence *sequences, const int row, 
  * @param secondSeqIndex second seq
  * @return alignment score
  */
-int calculateAlignment(const Sequence *sequences, const int matchScore,  const int mismatchScore,
+void calculateAlignment(const Sequence *sequences, const int matchScore,  const int mismatchScore,
                        const int gapScore, const int firstSeqIndex, const int secondSeqIndex)
 {
-    int alignment = 0;
-    int **dynamicTable = (int **) malloc(
-            (sequences[firstSeqIndex].numCharacters + 1) * sizeof(int *));
+    Cell **dynamicTable = (Cell **) malloc(
+            (sequences[firstSeqIndex].numCharacters + 1) * sizeof(Cell *));
     if (dynamicTable == NULL)
     {
         fprintf(stderr, "%s", MEMORY_ALLOCATION_ERR);
@@ -108,8 +190,8 @@ int calculateAlignment(const Sequence *sequences, const int matchScore,  const i
     }
     for (int row = 0; row < sequences[firstSeqIndex].numCharacters + 1; ++row)
     {
-        dynamicTable[row] = (int *) malloc(
-                (sequences[secondSeqIndex].numCharacters + 1) * sizeof(int));
+        dynamicTable[row] = (Cell *) malloc(
+                (sequences[secondSeqIndex].numCharacters + 1) * sizeof(Cell));
         if (dynamicTable[row] == NULL)
         {
             fprintf(stderr, "%s", MEMORY_ALLOCATION_ERR);
@@ -121,8 +203,10 @@ int calculateAlignment(const Sequence *sequences, const int matchScore,  const i
                          gapScore, firstSeqIndex, secondSeqIndex);
         }
     }
-    alignment = dynamicTable[sequences[firstSeqIndex].numCharacters]
-    [sequences[secondSeqIndex].numCharacters];
+
+    Cell *finalCell = &dynamicTable[sequences[firstSeqIndex].numCharacters]
+            [sequences[secondSeqIndex].numCharacters];
+    printSolution(sequences, firstSeqIndex, secondSeqIndex, finalCell);
 
     int rowInd = 0;
     for (rowInd = 0; rowInd < sequences[firstSeqIndex].numCharacters + 1; ++rowInd)
@@ -130,8 +214,6 @@ int calculateAlignment(const Sequence *sequences, const int matchScore,  const i
         free(dynamicTable[rowInd]);
     }
     free(dynamicTable);
-
-    return alignment;
 }
 
 /**
@@ -251,10 +333,7 @@ int main(int argc, char* argv[])
     {
         for (int h = k + 1; h < numSequences; ++h)
         {
-            int alignment = calculateAlignment(sequences, matchScore, mismatchScore, gapScore, k,
-                                               h);
-            printf("Score for alignment of %s to %s is %d\n", sequences[k].name, sequences[h]
-            .name, alignment);
+            calculateAlignment(sequences, matchScore, mismatchScore, gapScore, k, h);
         }
     }
 
