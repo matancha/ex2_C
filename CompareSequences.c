@@ -206,19 +206,10 @@ void calculateAlignment(const Sequence *sequences, const int matchScore,  const 
 
     struct Cell *finalCell = &dynamicTable[sequences[firstSeqIndex].numCharacters]
             [sequences[secondSeqIndex].numCharacters];
-//    for (int a=0; a<sequences[firstSeqIndex].numCharacters+1; ++a)
-//    {
-//        for (int b=0; b<sequences[secondSeqIndex].numCharacters+1; ++b)
-//        {
-//            printf("%d ", dynamicTable[a][b].value);
-//        }
-//        printf("\n");
-//    }
 
     printSolution(sequences, firstSeqIndex, secondSeqIndex, finalCell);
 
-    int rowInd = 0;
-    for (rowInd = 0; rowInd < sequences[firstSeqIndex].numCharacters + 1; ++rowInd)
+    for (int rowInd = 0; rowInd < sequences[firstSeqIndex].numCharacters + 1; ++rowInd)
     {
         free(dynamicTable[rowInd]);
     }
