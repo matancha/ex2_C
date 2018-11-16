@@ -1,13 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #define MAX_CHARS_LINE 100
+#define MAX_SEQUENCES_NUM 100
 
+const int NUM_ARGUMENTS = 4;
 const unsigned int FILE_PATH_ARG_INDEX = 1;
 const unsigned int MATCH_ARG_INDEX = 2;
 const unsigned int MISMATCH_ARG_INDEX = 3;
 const unsigned int GAP_ARG_INDEX = 4;
+const char SEQUENCE_NAME_LINE_MARKER = '>';
+const char *MEMORY_ALLOCATION_ERR = "Memory allocation failed";
 
 typedef struct
 {
@@ -16,65 +21,109 @@ typedef struct
     int numCharacters;
 } Sequence;
 
-int main(int argc, char* argv[])
+/**
+ * Concatenates strings
+ * @param old_str base string
+ * @param new_str characters to add to old_str
+ */
+void concatenateStrings(char *old_str, const char *new_str)
 {
-    /* Check for correct number of arguments */
-    char *filePath = argv[FILE_PATH_ARG_INDEX];
-    int matchScore;
-    int mismatchScore;
-    int gapScore;
-    /* check if sscanf failed */
-    sscanf(argv[MATCH_ARG_INDEX], "%d", &matchScore);
-    sscanf(argv[MISMATCH_ARG_INDEX], "%d", &mismatchScore);
-    sscanf(argv[GAP_ARG_INDEX], "%d", &gapScore);
-
-    FILE* fp;
-    fp = fopen(filePath, "r");
-    /* Check if file is readable */
-
-    char line[MAX_CHARS_LINE + 1];
-    Sequence sequences[100];
-
-    int i = -1;
-    while(fgets(line, sizeof(line), fp))
+    char *buffer = (char *)malloc(strlen(old_str) + 1);
+    if (buffer == NULL)
     {
-        if (strncmp(line, ">", sizeof(char)) == 0)
+        fprintf(stderr, "%s", MEMORY_ALLOCATION_ERR);
+        exit(EXIT_FAILURE);
+    }
+    strcpy(buffer, old_str);
+    old_str = (char *)realloc(old_str, strlen(new_str) + strlen(buffer) + 1);
+    strcpy(old_str, buffer);
+    strcat(old_str, new_str);
+    free(buffer);
+}
+
+void parseSequences(FILE* filePtr, Sequence sequences[MAX_SEQUENCES_NUM], int *numSequences)
+{
+    char line[MAX_CHARS_LINE + 1];
+    int sequenceIndex = -1;
+
+    while(fgets(line, sizeof(line), filePtr))
+    {
+        if (strncmp(line, &SEQUENCE_NAME_LINE_MARKER, sizeof(char)) == 0)
         {
-            i++;
+            sequenceIndex++;
             char *name = strtok(line, "\n");
-            memcpy(sequences[i].name, &name[1], strlen(name));
-            sequences[i].numCharacters = 0;
+            memcpy(sequences[sequenceIndex].name, &name[1], strlen(name));
+            sequences[sequenceIndex].numCharacters = 0;
         }
         else
         {
             char *characters = strtok(line, "\n");
-            /* check if malloc succeeded */
-            if (sequences[i].numCharacters != 0)
+            if (sequences[sequenceIndex].numCharacters != 0)
             {
-                char *buffer = (char *)malloc(strlen(sequences[i].letters) + 1);
-                strcpy(buffer, sequences[i].letters);
-                sequences[i].letters = (char *)realloc(sequences[i].letters, strlen(characters)
-                                                                             + strlen(buffer) + 1);
-                strcpy(sequences[i].letters, buffer);
-                strcat(sequences[i].letters, characters);
-                free(buffer);
+                concatenateStrings(sequences[sequenceIndex].letters, characters);
             }
             else
             {
-                sequences[i].letters = (char *)malloc(strlen(characters));
-                strcpy(sequences[i].letters, characters);
+                sequences[sequenceIndex].letters = (char *)malloc(strlen(characters) + 1);
+                if (sequences[sequenceIndex].letters == NULL)
+                {
+                    fprintf(stderr, "%s", MEMORY_ALLOCATION_ERR);
+                    exit(EXIT_FAILURE);
+                }
+                strcpy(sequences[sequenceIndex].letters, characters);
             }
-            sequences[i].numCharacters = (int)strlen(sequences[i].letters);
-            printf("%s\n", sequences[i].letters);
+            sequences[sequenceIndex].numCharacters = (int)strlen(sequences[sequenceIndex].letters);
         }
     }
 
-    int num_sequences = i + 1;
-    int **dynamicTable;
+    *numSequences = sequenceIndex + 1;
+}
 
-    for (int k = 0; k < num_sequences; ++k)
+/**
+ * Assigns string value to int variable. If failure is detected, exits the program.
+ * @param str string to convert
+ * @param variable int pointer
+ */
+void convertStrToInt(const char *str, int *variable)
+{
+    char *endptr;
+    *variable = (int)strtol(str, &endptr, 10);
+    if (*variable == 0 && (errno != 0 && endptr == str))
     {
-        for (int h = k + 1; h < num_sequences; ++h)
+        fprintf(stderr, "Illegal parameter supplied");
+        exit(EXIT_FAILURE);
+    }
+}
+
+int main(int argc, char* argv[])
+{
+    if (argc < NUM_ARGUMENTS)
+    {
+        fprintf(stdout, "Usage: CompareSequences <path_to_sequences_file> <m> <s> <g>");
+        exit(EXIT_FAILURE);
+    }
+
+    char *filePath = argv[FILE_PATH_ARG_INDEX];
+    int matchScore, mismatchScore, gapScore;
+    convertStrToInt(argv[MATCH_ARG_INDEX], &matchScore);
+    convertStrToInt(argv[MISMATCH_ARG_INDEX], &mismatchScore);
+    convertStrToInt(argv[GAP_ARG_INDEX], &gapScore);
+
+    FILE* fp = fopen(filePath, "r");
+    if (fp == NULL)
+    {
+        fprintf(stderr, "File can't be opened!");
+        exit(EXIT_FAILURE);
+    }
+    Sequence sequences[MAX_SEQUENCES_NUM];
+    int numSequences;
+    parseSequences(fp, sequences, &numSequences);
+    fclose(fp);
+
+    int **dynamicTable;
+    for (int k = 0; k < numSequences; ++k)
+    {
+        for (int h = k + 1; h < numSequences; ++h)
         {
             dynamicTable = (int **)malloc((sequences[k].numCharacters+1)*sizeof(int *));
             for (int row = 0; row < sequences[k].numCharacters+1; ++row)
@@ -131,7 +180,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    for (int j = 0; j < num_sequences; ++j)
+    for (int j = 0; j < numSequences; ++j)
     {
         free(sequences[j].letters);
     }
