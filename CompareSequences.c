@@ -244,7 +244,8 @@ int main(int argc, char* argv[]) {
         for (int h = k + 1; h < numSequences; ++h) {
             int alignment = calculateAlignment(sequences, matchScore, mismatchScore, gapScore, k,
                                                h);
-            printf("%s and %s, %d\n", sequences[k].name, sequences[h].name, alignment);
+            printf("Score for alignment of %s to %s is %d\n", sequences[k].name, sequences[h]
+            .name, alignment);
         }
     }
 
