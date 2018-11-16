@@ -76,7 +76,7 @@ void printSecondSeq(const struct Cell *temp)
  * @param finalCell final cell in dynamic table
  */
 void printSolution(const Sequence *sequences, const int firstSeqIndex, const int secondSeqIndex,
-        const struct Cell *finalCell)
+                   const struct Cell *finalCell)
 {
     printf("Score for alignment of %s to %s is %d\n", sequences[firstSeqIndex].name,
            sequences[secondSeqIndex].name, finalCell->value);
@@ -100,7 +100,7 @@ void printSolution(const Sequence *sequences, const int firstSeqIndex, const int
  * @param secondSeqIndex score for second index
  */
 void populateCell(struct Cell **dynamicTable, const Sequence *sequences, const int row, const int
-        column, const int matchScore, const int mismatchScore, const int gapScore,
+                  column, const int matchScore, const int mismatchScore, const int gapScore,
                   const int firstSeqIndex, const int secondSeqIndex)
 {
     if (column == 0 && row == 0)
@@ -179,10 +179,10 @@ void populateCell(struct Cell **dynamicTable, const Sequence *sequences, const i
  * @return alignment score
  */
 void calculateAlignment(const Sequence *sequences, const int matchScore,  const int mismatchScore,
-                       const int gapScore, const int firstSeqIndex, const int secondSeqIndex)
+                        const int gapScore, const int firstSeqIndex, const int secondSeqIndex)
 {
     struct Cell **dynamicTable = (struct Cell **) malloc(
-            (sequences[firstSeqIndex].numCharacters+1) * sizeof(struct Cell *));
+            (sequences[firstSeqIndex].numCharacters + 1) * sizeof(struct Cell *));
     if (dynamicTable == NULL)
     {
         fprintf(stderr, "%s", MEMORY_ALLOCATION_ERR);
@@ -191,7 +191,7 @@ void calculateAlignment(const Sequence *sequences, const int matchScore,  const 
     for (int row = 0; row < sequences[firstSeqIndex].numCharacters + 1; ++row)
     {
         dynamicTable[row] = (struct Cell *) malloc(
-                (sequences[secondSeqIndex].numCharacters+1) * sizeof(struct Cell));
+                (sequences[secondSeqIndex].numCharacters + 1) * sizeof(struct Cell));
         if (dynamicTable[row] == NULL)
         {
             fprintf(stderr, "%s", MEMORY_ALLOCATION_ERR);
