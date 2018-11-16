@@ -101,14 +101,17 @@ int calculateAlignment(const Sequence *sequences, const int matchScore,  const i
     int alignment = 0;
     int **dynamicTable = (int **) malloc(
             (sequences[firstSeqIndex].numCharacters + 1) * sizeof(int *));
-    if (dynamicTable == NULL) {
+    if (dynamicTable == NULL)
+    {
         fprintf(stderr, "%s", MEMORY_ALLOCATION_ERR);
         exit(EXIT_FAILURE);
     }
-    for (int row = 0; row < sequences[firstSeqIndex].numCharacters + 1; ++row) {
+    for (int row = 0; row < sequences[firstSeqIndex].numCharacters + 1; ++row)
+    {
         dynamicTable[row] = (int *) malloc(
                 (sequences[secondSeqIndex].numCharacters + 1) * sizeof(int));
-        if (dynamicTable[row] == NULL) {
+        if (dynamicTable[row] == NULL)
+        {
             fprintf(stderr, "%s", MEMORY_ALLOCATION_ERR);
             exit(EXIT_FAILURE);
         }
@@ -139,7 +142,8 @@ int calculateAlignment(const Sequence *sequences, const int matchScore,  const i
 void concatenateStrings(char *old_str, const char *new_str)
 {
     char *buffer = (char *) malloc(strlen(old_str) + 1);
-    if (buffer == NULL) {
+    if (buffer == NULL)
+    {
         fprintf(stderr, "%s", MEMORY_ALLOCATION_ERR);
         exit(EXIT_FAILURE);
     }
@@ -218,8 +222,10 @@ void convertStrToInt(const char *str, int *variable)
  * @param argv arguments
  * @return exit status
  */
-int main(int argc, char* argv[]) {
-    if (argc < NUM_ARGUMENTS) {
+int main(int argc, char* argv[])
+{
+    if (argc < NUM_ARGUMENTS)
+    {
         fprintf(stdout, "%s", USAGE_MSG);
         exit(EXIT_FAILURE);
     }
@@ -231,7 +237,8 @@ int main(int argc, char* argv[]) {
     convertStrToInt(argv[GAP_ARG_INDEX], &gapScore);
 
     FILE *fp = fopen(filePath, "r");
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         fprintf(stderr, "%s", FILE_IO_ERR);
         exit(EXIT_FAILURE);
     }
@@ -240,8 +247,10 @@ int main(int argc, char* argv[]) {
     parseSequences(fp, sequences, &numSequences);
     fclose(fp);
 
-    for (int k = 0; k < numSequences; ++k) {
-        for (int h = k + 1; h < numSequences; ++h) {
+    for (int k = 0; k < numSequences; ++k)
+    {
+        for (int h = k + 1; h < numSequences; ++h)
+        {
             int alignment = calculateAlignment(sequences, matchScore, mismatchScore, gapScore, k,
                                                h);
             printf("Score for alignment of %s to %s is %d\n", sequences[k].name, sequences[h]
@@ -249,7 +258,8 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    for (int j = 0; j < numSequences; ++j) {
+    for (int j = 0; j < numSequences; ++j)
+    {
         free(sequences[j].letters);
     }
 }
