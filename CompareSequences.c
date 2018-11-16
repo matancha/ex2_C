@@ -74,9 +74,9 @@ int main(int argc, char* argv[])
 
     for (int k = 0; k < num_sequences; ++k)
     {
-        dynamicTable = (int **)malloc((sequences[k].numCharacters+1)*sizeof(int *));
         for (int h = k + 1; h < num_sequences; ++h)
         {
+            dynamicTable = (int **)malloc((sequences[k].numCharacters+1)*sizeof(int *));
             for (int row = 0; row < sequences[k].numCharacters+1; ++row)
             {
                 dynamicTable[row] = (int *)malloc((sequences[h].numCharacters+1)*sizeof(int));
@@ -120,16 +120,19 @@ int main(int argc, char* argv[])
                     dynamicTable[row][column] = biggestResult;
                 }
             }
-//            for (int row = 0; row < sequences[k].numCharacters+1; ++row)
-//            {
-//                for (int column = 0; column < sequences[h].numCharacters+1; ++column)
-//                {
-//                    printf("%d ", dynamicTable[row][column]);
-//                }
-//                printf("\n");
-//            }
             printf("%s and %s, %d\n", sequences[k].name, sequences[h].name,
-                    dynamicTable[sequences[k].numCharacters][sequences[h].numCharacters]);
+                   dynamicTable[sequences[k].numCharacters][sequences[h].numCharacters]);
+
+            for (int row = 0; row < sequences[k].numCharacters+1; ++row)
+            {
+                free(dynamicTable[row]);
+            }
+            free(dynamicTable);
         }
+    }
+
+    for (int j = 0; j < num_sequences; ++j)
+    {
+        free(sequences[j].letters);
     }
 }
